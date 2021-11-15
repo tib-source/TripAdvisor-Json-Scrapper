@@ -1,8 +1,10 @@
+from os import error
 import sys
 import csv
 from selenium import webdriver
 import time
 import json
+from selenium.webdriver.common.by import By
 
 # default path to file to store data
 path_to_file = "/Users/gius/Desktop/reviews.csv"
@@ -23,27 +25,45 @@ if (len(sys.argv) == 4):
 driver = webdriver.Chrome()
 driver.get(url)
 
+time.sleep(1)
+driver.find_element(By.XPATH,'//*[@id="_evidon-accept-button"]').click()
+
 # change the value inside the range to save more or less reviews
+data = []
 for i in range(0, num_page):
     
     # expand the review 
     time.sleep(2)
-    driver.find_element_by_xpath("//span[@class='taLnk ulBlueLinks']").click()
-
-    container = driver.find_elements_by_xpath(".//div[@class='review-container']")
-
+    driver.find_element(By.XPATH, "//span[@class='taLnk ulBlueLinks']").click()
+    container = driver.find_elements_by_xpath(".//div[contains(@class,'review-container')]")
+    print("="*30)
+    print("="*30)
+    print("="*30)
+    print(container, len(container))
+    print("="*30)
+    print("="*30)
+    print("="*30)
     for j in range(len(container)):
-        data = { 
-        "title" : container[j].find_element_by_xpath(".//span[@class='noQuotes']").text,
-        "date" : container[j].find_element_by_xpath(".//span[contains(@class, 'ratingDate')]").get_attribute("title"),
-        "rating" : container[j].find_element_by_xpath(".//span[contains(@class, 'ui_bubble_rating bubble_')]").get_attribute("class").split("_")[3],
-        "review" : container[j].find_element_by_xpath(".//p[@class='partial_entry']").text.replace("\n", " "),
-        "profile" : container[j].find_element_by_xpath("//*[@id='UID_254F2CA93A21BA5B94B592FF02CF92A4-SRC_739705132']/div[1]/div/a/div/div/img.//p[@class='partial_entry']").get_attribute("src"),
-        }
-        # Open the file to save the review
-        with open('data.json', "w") as f: 
-            json.dump(data, f, indent=4)
+        try: 
+            json_data = { 
+            "title" : container[j].find_element(By.XPATH,".//span[@class='noQuotes']").text,
+            "title" : container[j].find_element(By.XPATH,".//div[@class='info_text pointer_cursor']").find_element(By.TAG_NAME, 'div').text,
+            "date" : container[j].find_element(By.XPATH,".//span[contains(@class, 'ratingDate')]").get_attribute("title"),
+            "rating" : container[j].find_element(By.XPATH,".//span[contains(@class, 'ui_bubble_rating bubble_')]").get_attribute("class").split("_")[3],
+            "review" : container[j].find_element(By.XPATH,".//p[@class='partial_entry']").text.replace("\n", " "),
+            "profile" : container[j].find_element(By.XPATH,".//img").get_attribute("src"),
+            }
+            data.append(json_data) 
+        except: 
+            continue
     # change the page
-    driver.find_element_by_xpath('.//a[@class="nav next ui_button primary"]').click()
+    try: 
+        button = driver.find_element(By.XPATH,'.//a[@class="nav next ui_button primary"]')
+        button.click()
+    except:
+        break
+    
 
+with open('data.json', "w") as f: 
+    json.dump(data, f, indent=4)
 driver.close()
